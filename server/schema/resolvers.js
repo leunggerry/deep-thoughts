@@ -8,6 +8,7 @@
  * import required
  */
 const { User, Thought } = require("../models");
+const { AuthenticationError } = require("apollo-server-express");
 
 // Resolvers are like controllers
 // Controller file wrks in that it servers of performing an action
@@ -51,6 +52,29 @@ const resolvers = {
         .select("-__v -password")
         .populate("friends")
         .populate("thoughts");
+    },
+  },
+  //mutations
+  Mutation: {
+    addUser: async (parent, args) => {
+      // The mongoose User creates new user in the DB and use the args as params
+      const user = await User.create(args);
+      return user;
+    },
+    login: async (parent, { email, password }) => {
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        throw new AuthenticationError("Incorrect credentials");
+      }
+
+      const correctPw = await user.isCorrectPassword(password);
+
+      if (!correctPw) {
+        throw new AuthenticationError("Incorrect credentials");
+      }
+
+      return user;
     },
   },
 };
